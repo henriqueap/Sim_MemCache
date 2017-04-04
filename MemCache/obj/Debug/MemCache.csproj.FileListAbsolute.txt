@@ -1,0 +1,6 @@
+c:\users\henri_000\documents\visual studio 2017\Projects\Simulador de Memória Cache\MemCache\obj\Debug\MemCache.csprojResolveAssemblyReference.cache
+c:\users\henri_000\documents\visual studio 2017\Projects\Simulador de Memória Cache\MemCache\bin\Debug\MemCache.exe.config
+c:\users\henri_000\documents\visual studio 2017\Projects\Simulador de Memória Cache\MemCache\bin\Debug\MemCache.exe
+c:\users\henri_000\documents\visual studio 2017\Projects\Simulador de Memória Cache\MemCache\bin\Debug\MemCache.pdb
+c:\users\henri_000\documents\visual studio 2017\Projects\Simulador de Memória Cache\MemCache\obj\Debug\MemCache.exe
+c:\users\henri_000\documents\visual studio 2017\Projects\Simulador de Memória Cache\MemCache\obj\Debug\MemCache.pdb
