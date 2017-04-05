@@ -8,6 +8,19 @@ namespace MemCache
 {
     class Prog_MemCache
     {
+        // Função para configurar a instrução do arquivo trace
+        public static string ConfigInst(string val_hex)
+        {
+            string new_inst = val_hex.Substring(2, val_hex.Length - 2);
+            if (new_inst.Length < 8)
+            {
+                while (new_inst.Length < 8)
+                    new_inst = new_inst.Insert(0, "0");
+            }
+            Console.WriteLine("{0}", new_inst);
+            return new_inst;
+        }
+        
         // Função que converte um valor binário em decimal
         public static string BinToDec(string val_bin)
         {
@@ -75,7 +88,7 @@ namespace MemCache
         // Função que testa se houve HIT
         public static bool TestHit(string[] arr, string inst, int filter)
         {
-            string inst_bin = HexToBin(inst.Substring(4, 8)).Replace(" ", "");
+            string inst_bin = HexToBin(inst).Replace(" ", "");
             string index = inst_bin.Substring(32 - filter, filter);
             string tag = inst_bin.Substring(0, 32 - filter);
             int i = Convert.ToUInt16(BinToDec(index));
@@ -96,6 +109,7 @@ namespace MemCache
             int miss = 0;
             int total = 0;
             string index_inst;
+            string inst_hex;
             string line;
             string tag;
             string trace_file;
@@ -146,25 +160,26 @@ namespace MemCache
 
             // Solicitando o nome do arquivo de trace
             Console.Write("Digite o nome do arquivo de trace: ");
-            trace_file = "../../" + Console.ReadLine() + ".trace";
+            trace_file = "../../traces/" + Console.ReadLine() + ".trace";
 
             // Read the file and display it line by line.  
             System.IO.StreamReader file = new System.IO.StreamReader(@trace_file);
             while ((line = file.ReadLine()) != null)
             {
+                inst_hex = ConfigInst(line);
                 total++;
-                if (TestHit(mem_cache, line, index))
+                if (TestHit(mem_cache, inst_hex, index))
                 {
                     hits++;
-                    index_inst = HexToBin(line.Substring(4, 8)).Replace(" ", "").Substring(32 - index, index);
-                    tag = HexToBin(line.Substring(4, 8)).Replace(" ", "").Substring(0, 32 - index);
+                    index_inst = HexToBin(inst_hex).Replace(" ", "").Substring(32 - index, index);
+                    tag = HexToBin(inst_hex).Replace(" ", "").Substring(0, 32 - index);
                     //Console.WriteLine("Index = {0}: {1} == {2} HIT!", index_inst, tag, mem_cache[Convert.ToUInt16(BinToDec(index_inst))]);
                 }
                 else
                 {
                     miss++;
-                    index_inst = HexToBin(line.Substring(4, 8)).Replace(" ", "").Substring(32 - index, index);
-                    tag = HexToBin(line.Substring(4, 8)).Replace(" ", "").Substring(0, 32 - index);
+                    index_inst = HexToBin(inst_hex).Replace(" ", "").Substring(32 - index, index);
+                    tag = HexToBin(inst_hex).Replace(" ", "").Substring(0, 32 - index);
                     //Console.WriteLine("Index = {0}: {1} != {2} MISS!", index_inst, tag, mem_cache[Convert.ToUInt16(BinToDec(index_inst))]);
                     // Alterando o conteúdo da linha
                     mem_cache[Convert.ToUInt16(BinToDec(index_inst))] = tag;
