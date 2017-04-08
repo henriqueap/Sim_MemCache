@@ -11,26 +11,29 @@ namespace MemCache
         // Função para configurar a instrução do arquivo trace
         public static string ConfigInst(string val_hex)
         {
+            // retirando os dois primeiros caracteres da instrução para ficar só o HEX válido
             string new_inst = val_hex.Substring(2, val_hex.Length - 2);
             if (new_inst.Length < 8)
             {
+                // completando com zeros a esquerda o HEX, se necessário, até ter 8 caracteres
                 while (new_inst.Length < 8)
                     new_inst = new_inst.Insert(0, "0");
             }
-            Console.WriteLine("{0}", new_inst);
+            //Console.WriteLine("{0}", new_inst);
             return new_inst;
         }
         
         // Função que converte um valor binário em decimal
         public static string BinToDec(string val_bin)
         {
-            int val_dec = 0;
+            int val_dec = 0; // valor em DEC
             int aux = 0;
             int i = -1;
-            char[] arrChar = val_bin.ToCharArray();
-            Array.Reverse(arrChar);
+            char[] arrChar = val_bin.ToCharArray(); // dígitos do valor BIN
+            Array.Reverse(arrChar); // invertendo a ordem do BIN
             string val_bin_inv = new String(arrChar);
             //Console.WriteLine(val_bin_inv);
+            // lendo o BIN de trás para frente para poder converter em DEC
             foreach (char val in val_bin_inv)
             {
                 i++;
@@ -55,13 +58,15 @@ namespace MemCache
         // Função que converte um valor hexadecimal em binário
         public static string HexToBin(string val_hex)
         {
-            string val_dec;
+            string val_dec; // valor em DEC
             string val_bin = "";
+            // de 0 a 15 em BIN de quatro dígitos
             string[] bin_lista = {"0000", "0001", "0010", "0011", "0100", "0101", "0110", "0111", "1000", "1001", "1010", "1011", "1100", "1101", "1110", "1111" };
             int count = 0;
             foreach (char val in val_hex)
             {
                 count++;
+                // convertendo cada letra/dígito do HEX
                 if (val.ToString().ToUpper() == "A")
                     val_dec = "10";
                 else if (val.ToString().ToUpper() == "B")
@@ -84,105 +89,97 @@ namespace MemCache
             }
             return val_bin;
         }
-
-        // Função que testa se houve HIT
-        public static bool TestHit(string[] arr, string inst, int filter)
+        
+        // Função que testa se houve HIT (True) ou MISS (False)
+        public static bool TestHit(string[,] cache, string inst, int r, int w)
         {
+            // converte a instrução HEX em BIN
             string inst_bin = HexToBin(inst).Replace(" ", "");
-            string index = inst_bin.Substring(32 - filter, filter);
-            string tag = inst_bin.Substring(0, 32 - filter);
-            int i = Convert.ToUInt16(BinToDec(index));
-            //Console.WriteLine("inst: {0}, index: {1} e tag: {2}", inst_bin, index, tag);
-            //Console.ReadKey();
+            // captura o índice BIN da palavra
+            string word = inst_bin.Substring(inst_bin.Length - w, w);
+            // captura o índice BIN da linha
+            string row = inst_bin.Substring(inst_bin.Length - (r+w), r);
+            // captura a tag BIN
+            string tag = inst_bin.Substring(0, 32 - w - r);
+            // convertendo os índices de BIN para DEC
+            int row_index = Convert.ToUInt16(BinToDec(row));
+            int word_index  = Convert.ToUInt16(BinToDec(word));
+            //Console.Write("Cache[{0},{1}] = {2}", row, word, tag);
 
-            if (arr[i] == "X")
+            // comparando o conteúdo da tag com a que está na cache e retornando true or false
+            if (cache[row_index, word_index].Equals("X"))
                 return false;
             else
-                return (tag.Equals(arr[i], StringComparison.OrdinalIgnoreCase));
+                return (tag.Equals(cache[row_index, word_index]));
         }
         
         static void Main(string[] args)
         {
-            // Declaração das variáveis
-            UInt16 index;
-            int hits = 0;
-            int miss = 0;
-            int total = 0;
-            string index_inst;
-            string inst_hex;
-            string line;
-            string tag;
-            string trace_file;
+            // Declaração de variáveis
+            int hits = 0; // total de hits
+            int miss = 0; // total de miss
+            int total = 0; // total de instruções lidas
+            string inst_hex; // instrução em HEX
+            string index_word_bin; // índice da palavra em BIN
+            string index_row_bin; // índice da linha em BIN
+            string tag; // tag em BIN
+            string trace_file; // nome do arquivo
+            string line_file; // linha do arquivo
 
             // Solicitando o número de linhas da cache
             Console.Write("Digite quantas linhas sua cache terá, ela precisa ser potência de 2 e ter no máximo 1024 linhas: ");
-            string rows_cache = Console.ReadLine();
-            switch (rows_cache)
-            {
-                case "2":
-                    index = 1;
-                    break;
-                case "4":
-                    index = 2;
-                    break;
-                case "8":
-                    index = 3;
-                    break;
-                case "16":
-                    index = 4;
-                    break;
-                case "32":
-                    index = 5;
-                    break;
-                case "64":
-                    index = 6;
-                    break;
-                case "128":
-                    index = 7;
-                    break;
-                case "256":
-                    index = 8;
-                    break;
-                case "512":
-                    index = 9;
-                    break;
-                default:
-                    index = 10;
-                    break;
-            }
-            string[] mem_cache = new string[Convert.ToUInt16(rows_cache)];
-            // Populando a cache com sinal de inativo: "X"
-            for (int i = 0; i <= mem_cache.Length - 1; i++)
-            {
-                mem_cache[i] = "X";
-            }
-            Console.WriteLine("Sua cache terá {0} linhas, e o índice será de {1} dígitos.", rows_cache, index.ToString());
+            double rows_cache = double.Parse(Console.ReadLine()); // nova variável para receber o nº de linhas
+            int index_row_size = Convert.ToUInt16(Math.Log(rows_cache, 2)); // nova variável para receber o tamanho do índice da linha
+            Console.Write("Digite quantas palavras sua cache terá, ela precisa ser potência de 2 e ter no máximo 16 palavras: ");
+            double words_cache = double.Parse(Console.ReadLine()); // nova variável para receber o nº de palavras
+            int index_word_size = Convert.ToUInt16(Math.Log(words_cache, 2)); // nova variável para receber o tamanho do índice da palavra
+            string[,] mem_cache = new string[Convert.ToUInt16(rows_cache), Convert.ToUInt16(words_cache)];
+            Console.WriteLine("Sua cache terá {0} linhas com {1} palavras e os índices serão de {2} e {3} dígito(s), respectivamente.", rows_cache.ToString(), words_cache.ToString(), index_row_size.ToString(), index_word_size.ToString());
 
-            // Solicitando o nome do arquivo de trace
+            // Populando a cache com sinal de inativo: "X"
+            for (int i = 0; i <= Convert.ToUInt16(rows_cache) - 1; i++)
+            {
+                for (int j = 0; j <= Convert.ToUInt16(words_cache) - 1; j++)
+                {
+                    mem_cache[i, j] = "X";
+                    //Console.WriteLine("Cache[{0}, {1}]= {2}", i, j, mem_cache[i, j]);
+                }
+                
+            }
+
+            // Solicitando o nome do arquivo de trace que está na pasta traces do projeto
             Console.Write("Digite o nome do arquivo de trace: ");
             trace_file = "../../traces/" + Console.ReadLine() + ".trace";
 
             // Read the file and display it line by line.  
             System.IO.StreamReader file = new System.IO.StreamReader(@trace_file);
-            while ((line = file.ReadLine()) != null)
+
+            while ((line_file = file.ReadLine()) != null)
             {
-                inst_hex = ConfigInst(line);
-                total++;
-                if (TestHit(mem_cache, inst_hex, index))
+                // só contabiliza o hit/miss se a primeira instrução for "2"
+                if (line_file[0].ToString().Equals("2"))
                 {
-                    hits++;
-                    index_inst = HexToBin(inst_hex).Replace(" ", "").Substring(32 - index, index);
-                    tag = HexToBin(inst_hex).Replace(" ", "").Substring(0, 32 - index);
-                    //Console.WriteLine("Index = {0}: {1} == {2} HIT!", index_inst, tag, mem_cache[Convert.ToUInt16(BinToDec(index_inst))]);
-                }
-                else
-                {
-                    miss++;
-                    index_inst = HexToBin(inst_hex).Replace(" ", "").Substring(32 - index, index);
-                    tag = HexToBin(inst_hex).Replace(" ", "").Substring(0, 32 - index);
-                    //Console.WriteLine("Index = {0}: {1} != {2} MISS!", index_inst, tag, mem_cache[Convert.ToUInt16(BinToDec(index_inst))]);
-                    // Alterando o conteúdo da linha
-                    mem_cache[Convert.ToUInt16(BinToDec(index_inst))] = tag;
+                    inst_hex = ConfigInst(line_file);
+                    total++;
+                    // testando se foi HIT ou MISS
+                    if (TestHit(mem_cache, inst_hex, index_row_size, index_word_size))
+                    {
+                        hits++;
+                        index_word_bin = HexToBin(inst_hex).Replace(" ", "").Substring(32 - index_word_size, index_word_size);
+                        index_row_bin = HexToBin(inst_hex).Replace(" ", "").Substring(32 - (index_row_size + index_word_size), index_row_size);
+                        tag = HexToBin(inst_hex).Replace(" ", "").Substring(0, 32 - (index_word_size + index_row_size));
+                        //Console.WriteLine(" == {0} HIT!", mem_cache[Convert.ToUInt16(BinToDec(index_row_bin)), Convert.ToUInt16(BinToDec(index_word_bin))]);
+                    }
+                    else
+                    {
+                        miss++;
+                        index_word_bin = HexToBin(inst_hex).Replace(" ", "").Substring(32 - index_word_size, index_word_size);
+                        index_row_bin = HexToBin(inst_hex).Replace(" ", "").Substring(32 - (index_row_size + index_word_size), index_row_size);
+                        tag = HexToBin(inst_hex).Replace(" ", "").Substring(0, 32 - (index_word_size + index_row_size));
+                        //Console.WriteLine(" != {0} MISS!", mem_cache[Convert.ToUInt16(BinToDec(index_row_bin)), Convert.ToUInt16(BinToDec(index_word_bin))]);
+                        // Alterando o conteúdo da linha
+                        mem_cache[Convert.ToUInt16(BinToDec(index_row_bin)), Convert.ToUInt16(BinToDec(index_word_bin))] = tag;
+                    }
                 }
             }
             file.Close();
