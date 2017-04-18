@@ -138,7 +138,7 @@ namespace MemCache
             int hits = 0; // total de hits
             int miss = 0; // total de miss
             int total = 0; // total de instruções lidas
-            int layer_index = 0; // índice da camada
+            int layer_index = 0; // recebe o índice da camada
             long counter = 0; // contador auxiliar para escolher a camada
             string inst_hex; // instrução em HEX
             string index_word_bin; // índice da palavra em BIN
@@ -190,13 +190,13 @@ namespace MemCache
                     inst_hex = ConfigInst(line_file);
                     total++;
                     // testando se foi HIT ou MISS
-                    if (TestHit(mem_cache, inst_hex, index_row_size, index_word_size, layers_cache) > -1)
+                    layer_index = TestHit(mem_cache, inst_hex, index_row_size, index_word_size, layers_cache);
+                    if (layer_index > -1)
                     {
                         hits++;
                         index_word_bin = HexToBin(inst_hex).Replace(" ", "").Substring(32 - index_word_size, index_word_size);
                         index_row_bin = HexToBin(inst_hex).Replace(" ", "").Substring(32 - (index_row_size + index_word_size), index_row_size);
                         tag = HexToBin(inst_hex).Replace(" ", "").Substring(0, 32 - (index_word_size + index_row_size));
-                        layer_index = GetLayer(aux_cache);
                         // Alterando o conteúdo da linha
                         mem_cache[layer_index, Convert.ToUInt16(BinToDec(index_row_bin)), Convert.ToUInt16(BinToDec(index_word_bin))] = tag;
                         // Atualizando o conteúdo do array gerenciador de cache
@@ -220,6 +220,10 @@ namespace MemCache
                 }
             }
             file.Close();
+            /*for (int n = 0; n < aux_cache.Length; n++)
+            {
+                Console.WriteLine("Aux[{0}] = {1}", n, aux_cache[n]);
+            }*/
             Console.Write("Houveram {0} hits, {1} miss de um total de {2} instruções. Taxa de Hits: {0}/{2} ({3:0.00}%)", hits, miss, total, (100*(Convert.ToDouble(hits))/Convert.ToDouble(total)));
             // Suspend the screen.
             Console.ReadKey();
